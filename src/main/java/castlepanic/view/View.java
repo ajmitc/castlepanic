@@ -27,8 +27,8 @@ public class View {
         gamePanel = new GamePanel(model, this);
 
         this.frame.getContentPane().setLayout(new CardLayout());
-        this.frame.getContentPane().add(mainMenuPanel, MAINMENU);
         this.frame.getContentPane().add(gamePanel, GAME);
+        this.frame.getContentPane().add(mainMenuPanel, MAINMENU);
     }
 
     public void refresh(){

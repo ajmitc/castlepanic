@@ -1,16 +1,33 @@
 package castlepanic.game.monster;
 
-public abstract class Monster {
-    private MonsterType type;
-    private String name;
-    private int maxHitpoints;
-    private int hitpoints;
+import castlepanic.game.Arc;
+import castlepanic.game.Ring;
+import castlepanic.view.ImageUtil;
 
-    public Monster(MonsterType type, String name, int maxHitpoints){
+import java.awt.image.BufferedImage;
+import java.util.HashSet;
+import java.util.Set;
+
+public abstract class Monster {
+    protected MonsterType type;
+    protected String name;
+    protected int maxHitpoints;
+    protected int hitpoints;
+    protected BufferedImage image;
+    protected Ring immunityRing;
+    protected Ring fatalRing;
+    protected Set<MonsterAbility> abilities = new HashSet<>();
+
+    // Current location
+    protected Arc arc;
+    protected Ring ring;
+
+    public Monster(MonsterType type, String name, int maxHitpoints, String imageName){
         this.type = type;
         this.name = name;
         this.maxHitpoints = maxHitpoints;
         this.hitpoints = maxHitpoints;
+        this.image = ImageUtil.get(imageName);
     }
 
     public MonsterType getType() {
@@ -39,5 +56,41 @@ public abstract class Monster {
             this.hitpoints = 0;
         else if (this.hitpoints > this.maxHitpoints)
             this.hitpoints = this.maxHitpoints;
+    }
+
+    public Arc getArc() {
+        return arc;
+    }
+
+    public void setArc(Arc arc) {
+        this.arc = arc;
+    }
+
+    public Ring getRing() {
+        return ring;
+    }
+
+    public void setRing(Ring ring) {
+        this.ring = ring;
+    }
+
+    public BufferedImage getImage() {
+        return image;
+    }
+
+    public Ring getFatalRing() {
+        return fatalRing;
+    }
+
+    public Ring getImmunityRing() {
+        return immunityRing;
+    }
+
+    public Set<MonsterAbility> getAbilities() {
+        return abilities;
+    }
+
+    public boolean hasAbility(MonsterAbility ability){
+        return abilities.contains(ability);
     }
 }

@@ -16,10 +16,5 @@ public class DeckBuilder {
         return deck;
     }
 
-    public static Deck buildResourceDeck(){
-        Deck deck = new Deck();
-        return deck;
-    }
-
     private DeckBuilder(){}
 }
