@@ -17,6 +17,8 @@ public abstract class Monster {
     protected Ring immunityRing;
     protected Ring fatalRing;
     protected Set<MonsterAbility> abilities = new HashSet<>();
+    protected boolean tar;
+    protected int fireTokens;
 
     // Current location
     protected Arc arc;
@@ -28,6 +30,8 @@ public abstract class Monster {
         this.maxHitpoints = maxHitpoints;
         this.hitpoints = maxHitpoints;
         this.image = ImageUtil.get(imageName);
+        this.tar = false;
+        this.fireTokens = 0;
     }
 
     public MonsterType getType() {
@@ -92,5 +96,25 @@ public abstract class Monster {
 
     public boolean hasAbility(MonsterAbility ability){
         return abilities.contains(ability);
+    }
+
+    public boolean isTar() {
+        return tar;
+    }
+
+    public void setTar(boolean tar) {
+        this.tar = tar;
+    }
+
+    public int getFireTokens() {
+        return fireTokens;
+    }
+
+    public void setFireTokens(int fireTokens) {
+        this.fireTokens = fireTokens;
+    }
+
+    public void adjFireTokens(int amount) {
+        this.fireTokens += amount;
     }
 }

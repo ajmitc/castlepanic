@@ -37,6 +37,10 @@ public enum Arc {
         return Arc.values()[Util.randInt(6)];
     }
 
+    public Arc getOpposite(){
+        return Arc.values()[(ordinal() + 3) % 6];
+    }
+
     @Override
     public String toString() {
         return "Arc " + ordinal() + " (" + color + ')';

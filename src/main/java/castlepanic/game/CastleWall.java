@@ -7,13 +7,15 @@ import java.awt.image.BufferedImage;
 public class CastleWall {
     private Arc arc;
     private boolean destroyed;
-    private boolean onFire;
+    private int fireTokens;
+    private boolean fortified;
     private BufferedImage image;
 
     public CastleWall(Arc arc){
         this.arc = arc;
         this.destroyed = false;
-        this.onFire = false;
+        this.fireTokens = 0;
+        this.fortified = false;
 
         switch (arc) {
             case ARC_1: {
@@ -55,17 +57,33 @@ public class CastleWall {
         this.destroyed = destroyed;
     }
 
-    public boolean isOnFire() {
-        return onFire;
+    public int getFireTokens() {
+        return fireTokens;
     }
 
-    public void setOnFire(boolean onFire) {
-        this.onFire = onFire;
+    public void setFireTokens(int fireTokens) {
+        this.fireTokens = fireTokens;
+        if (this.fireTokens == 3)
+            this.destroyed = true;
+    }
+
+    public void adjFireTokens(int amount) {
+        this.fireTokens += amount;
+        if (this.fireTokens == 3)
+            this.destroyed = true;
     }
 
     public BufferedImage getImage() {
         if (destroyed)
             return null;
         return image;
+    }
+
+    public boolean isFortified() {
+        return fortified;
+    }
+
+    public void setFortified(boolean fortified) {
+        this.fortified = fortified;
     }
 }

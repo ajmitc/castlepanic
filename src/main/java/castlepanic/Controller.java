@@ -3,13 +3,12 @@ package castlepanic;
 import castlepanic.game.*;
 import castlepanic.game.card.Card;
 import castlepanic.game.card.CardAbility;
-import castlepanic.game.monster.Imp;
-import castlepanic.game.monster.Monster;
-import castlepanic.game.monster.MonsterAbility;
-import castlepanic.game.monster.MonsterType;
+import castlepanic.game.monster.*;
 import castlepanic.view.View;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Controller {
     private Model model;
@@ -50,26 +49,65 @@ public class Controller {
                             while (model.getGame().getHand().size() < Game.HAND_SIZE){
                                 model.getGame().getHand().add(model.getGame().getCastlePanicDeck().draw());
                             }
-                            model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW);
+                            model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW_1);
                             break;
                         }
-                        case PLAY_DISCARD_AND_DRAW:{
+                        case PLAY_DISCARD_AND_DRAW_1:{
                             // TODO Ask player if they want to discard and draw
-                            model.getGame().setPhaseStep(PhaseStep.PLAY_TRADE_CARDS);
+                            // TODO Solo rules allow 2x
+                            model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW_2);
                             break;
                         }
-                        case PLAY_TRADE_CARDS:{
-                            // TODO, not useful for solo games
+                        case PLAY_DISCARD_AND_DRAW_2:{
                             model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS);
                             break;
                         }
                         case PLAY_CARDS:{
                             // TODO Ask player to choose a card to play
+                            // TODO When Hydra is damaged (but not slain), add 2 Imps to FOREST ring of same Arc as Hydra
+                            // TODO Warlock unaffected by wizard cards
                             model.getGame().setPhaseStep(PhaseStep.PLAY_MOVE_MONSTERS);
-                            break;
+                            return;
                         }
                         case PLAY_MOVE_MONSTERS:{
                             moveMonsters();
+                            model.getGame().setPhaseStep(PhaseStep.PLAY_DAMAGE_BURNING_MONSTERS);
+                            break;
+                        }
+                        case PLAY_DAMAGE_BURNING_MONSTERS:{
+                            // Reduce monster hitpoints from fire (1 hitpoint per fire token)
+                            model.getGame().getMonstersOnBoard().stream().forEach(monster -> {
+                                monster.adjHitpoints(-monster.getFireTokens());
+                                // When Hydra is damaged (but not slain), add 2 Imps to FOREST ring of same Arc as Hydra
+                                if (monster.hasAbility(MonsterAbility.HYDRA) && monster.getHitpoints() > 0){
+                                    // TODO This might not work since we're adding monsters to list that is being streamed...
+                                    handleHydraDamaged(monster, monster.getFireTokens());
+                                }
+                            });
+                            model.getGame().setPhaseStep(PhaseStep.PLAY_REMOVE_DESTROYED_MONSTERS);
+                            break;
+                        }
+                        case PLAY_REMOVE_DESTROYED_MONSTERS:{
+                            // Remove destroyed monsters
+                            List<Monster> toRemove = new ArrayList<>();
+                            model.getGame().getMonstersOnBoard().stream().forEach(monster -> {
+                                if (monster.getHitpoints() == 0){
+                                    toRemove.add(monster);
+                                }
+                            });
+                            if (!toRemove.isEmpty()){
+                                // Replace Doppelganger with first destroyed monster
+                                model.getGame().getMonstersOnBoard().stream().forEach(monster -> {
+                                    if (monster.hasAbility(MonsterAbility.DOPPELGANGER)){
+                                        toRemove.add(monster);
+                                        Monster replacement = toRemove.remove(0);
+                                        replacement.setArc(monster.getArc());
+                                        replacement.setRing(monster.getRing());
+                                        replacement.setHitpoints(replacement.getMaxHitpoints());
+                                    }
+                                });
+                                model.getGame().getMonstersOnBoard().removeAll(toRemove);
+                            }
                             model.getGame().setPhaseStep(PhaseStep.PLAY_DRAW_NEW_MONSTERS);
                             break;
                         }
@@ -111,8 +149,6 @@ public class Controller {
             case WIZARD:
                 applyWizardCardAbility(card.getAbility());
                 break;
-            case RESOURCE:
-                break;
         }
     }
 
@@ -128,7 +164,7 @@ public class Controller {
     private void applyWizardCardAbility(CardAbility ability){
         switch (ability){
             case ARCANE_ASSEMBLY:{
-                // TODO All player may immediately build walls for 1 Brick OR 1 Mortar per wall
+                // TODO All player may immediately build walls for 1 BrickCard OR 1 Mortar per wall
                 break;
             }
         }
@@ -148,29 +184,121 @@ public class Controller {
     }
 
     private void moveMonster(Monster monster){
+        if (monster.hasAbility(MonsterAbility.DRAGON)) {
+            // In play, roll 1d6 and consult table
+            int die = Util.roll();
+            switch (die){
+                case 1:
+                    // Move 1 space CW
+                    moveMonsterRotate(monster, true);
+                    break;
+                case 2:
+                case 5:
+                    // Move 1 forward
+                    moveMonsterNormal(monster);
+                    break;
+                case 3:
+                    // No movement
+                    break;
+                case 4:
+                    // Move 1 space backward
+                    Ring nextRing = monster.getRing().closerToForest();
+                    monster.setRing(nextRing);
+                    break;
+                case 6:
+                    // Move 1 space CCW
+                    moveMonsterRotate(monster, false);
+                    break;
+            }
+            if (monster.getRing() != Ring.CASTLE)
+                breathFire(monster);
+        }
+        else if (monster.hasAbility(MonsterAbility.CHIMERA)){
+            // In play, moves 1 space CCW, then 1 space toward castle, if still alive, it breathes fire (if outside castle ring)
+            if (monster.isTar()) {
+                monster.setTar(false);
+            }
+            else {
+                moveMonsterRotate(monster, false);
+                moveMonsterNormal(monster);
+                if (monster.getHitpoints() > 0 && monster.getRing() != Ring.CASTLE){
+                    breathFire(monster);
+                }
+            }
+        }
+        else if (monster.hasAbility(MonsterAbility.WARLOCK)){
+            if (!monster.isTar() && monster.getRing() != Ring.CASTLE) {
+                Arc newArc = Arc.values()[Util.randInt(6)];
+                monster.setArc(newArc);
+            }
+            moveMonsterNormal(monster);
+        }
+        else
+            moveMonsterNormal(monster);
+    }
+
+    private void moveMonsterNormal(Monster monster){
+        if (monster.hasAbility(MonsterAbility.DOPPELGANGER))
+            return;
+        if (monster.isTar()) {
+            monster.setTar(false);
+            return;
+        }
+
         int numRings = monster.hasAbility(MonsterAbility.MOVE_2_SPACES)? 2: 1;
         for (int i = 0; i < numRings; ++i) {
             switch (monster.getRing()) {
                 case CASTLE: {
-                    // Move clockwise
-                    Arc nextArc = monster.getArc().rotateClockwise();
-                    // Check if arc contains castle tower
-                    CastleTower tower = model.getGame().getTower(nextArc);
-                    if (!tower.isDestroyed()) {
-                        tower.setDestroyed(true);
-                        monster.adjHitpoints(-1);
-                    } else
-                        monster.setArc(monster.getArc().rotateClockwise());
+                    moveMonsterRotate(monster, true);
                     break;
                 }
                 case SWORDSMAN: {
-                    // Check if there's a wall
                     CastleWall wall = model.getGame().getWall(monster.getArc());
-                    if (!wall.isDestroyed()) {
-                        wall.setDestroyed(true);
-                        monster.adjHitpoints(-1);
-                    } else
-                        monster.setRing(Ring.CASTLE);
+                    if (monster.hasAbility(MonsterAbility.CLIMB_WALLS)){
+                        // Bypass wall, but if wall is burning, add fire token to monster
+                        if (wall.getFireTokens() > 0){
+                            monster.adjFireTokens(1);
+                        }
+                        CastleTower tower = model.getGame().getTower(monster.getArc());
+                        if (!tower.isDestroyed()) {
+                            tower.setDestroyed(true);
+                            monster.adjHitpoints(-1);
+                            if (monster.hasAbility(MonsterAbility.HYDRA)){
+                                handleHydraDamaged(monster, 1);
+                            }
+                            else if (monster.hasAbility(MonsterAbility.NECROMANCER)){
+                                monster.setHitpoints(0);
+                                // Move monster from discard pile to draw pile
+                                model.getGame().getMonsterBag().shuffleDefeated();
+                                Monster monster1 = model.getGame().getMonsterBag().drawDefeatedMonster();
+                                if (monster1 != null && monster1.getType() != MonsterType.EFFECT && monster1.getType() != MonsterType.MEGABOSS)
+                                    model.getGame().getMonsterBag().add(monster1);
+                            }
+                        } else
+                            monster.setRing(Ring.CASTLE);
+                    }
+                    else {
+                        // Check if there's a wall
+                        if (!wall.isDestroyed()) {
+                            if (wall.isFortified()) {
+                                wall.setFortified(false);
+                            } else
+                                wall.setDestroyed(true);
+                            monster.adjHitpoints(-1);
+                            if (monster.hasAbility(MonsterAbility.HYDRA)){
+                                handleHydraDamaged(monster, 1);
+                            }
+                            else if (monster.hasAbility(MonsterAbility.NECROMANCER)){
+                                monster.setHitpoints(0);
+                                // Move monster from discard pile to draw pile
+                                model.getGame().getMonsterBag().shuffleDefeated();
+                                Monster monster1 = model.getGame().getMonsterBag().drawDefeatedMonster();
+                                if (monster1 != null && monster1.getType() != MonsterType.EFFECT && monster1.getType() != MonsterType.MEGABOSS)
+                                    model.getGame().getMonsterBag().add(monster1);
+                            }
+                        } else
+                            monster.setRing(Ring.CASTLE);
+                    }
                     break;
                 }
                 case KNIGHT: {
@@ -189,6 +317,35 @@ public class Controller {
         }
     }
 
+    private void moveMonsterRotate(Monster monster, boolean cw){
+        if (monster.isTar()) {
+            monster.setTar(false);
+            return;
+        }
+        Arc nextArc = cw? monster.getArc().rotateClockwise(): monster.getArc().rotateCounterClockwise();
+        if (monster.getRing() == Ring.CASTLE) {
+            // Check if arc contains castle tower
+            CastleTower tower = model.getGame().getTower(nextArc);
+            if (!tower.isDestroyed()) {
+                tower.setDestroyed(true);
+                monster.adjHitpoints(-1);
+                if (monster.hasAbility(MonsterAbility.HYDRA)){
+                    handleHydraDamaged(monster, 1);
+                }
+                else if (monster.hasAbility(MonsterAbility.NECROMANCER)){
+                    monster.setHitpoints(0);
+                    // Move monster from discard pile to draw pile
+                    model.getGame().getMonsterBag().shuffleDefeated();
+                    Monster monster1 = model.getGame().getMonsterBag().drawDefeatedMonster();
+                    if (monster1 != null && monster1.getType() != MonsterType.EFFECT && monster1.getType() != MonsterType.MEGABOSS)
+                        model.getGame().getMonsterBag().add(monster1);
+                }
+                return;
+            }
+        }
+        monster.setArc(nextArc);
+    }
+
     private void drawNewMonsters() {
         drawNewMonsters(2);
     }
@@ -202,58 +359,101 @@ public class Controller {
     private void drawNewMonster(){
         Monster monster = model.getGame().getMonsterBag().draw();
         if (monster.getType() == MonsterType.EFFECT){
-            handleMonsterEffect(monster);
+            handleMonsterEffectOnDraw(monster);
         }
         else {
             placeMonsterOnBoard(monster);
+            if (!monster.getAbilities().isEmpty())
+                handleMonsterEffectOnDraw(monster);
         }
     }
 
-    private void handleMonsterEffect(Monster monster){
+    private void handleMonsterEffectOnDraw(Monster monster){
         for (MonsterAbility ability: monster.getAbilities()) {
             switch (ability){
-                case HYDRA:{
-                    break;
-                }
+                case CHIMERA:
                 case DRAGON:{
-                    break;
-                }
-                case CHIMERA:{
+                    // breathes fire when placed
+                    breathFire(monster);
                     break;
                 }
                 case WARLOCK:{
+                    // TODO Player must discard 1 Wizard card
                     break;
                 }
                 case HEALER:{
+                    // Heal all monster by 1
+                    model.getGame().getMonstersOnBoard().stream().forEach(monster1 -> {
+                        if (monster1.getHitpoints() > 0){
+                            monster1.adjHitpoints(1);
+                        }
+                    });
                     break;
                 }
                 case BASILISK:{
+                    // TODO Player discards down to 2 cards
+                    // TODO While in play, skip discard-and-draw step
                     break;
                 }
                 case CONJURER:{
-                    break;
-                }
-                case TREBUCHET:{
+                    placeMonsterOnBoard(monster);
+                    // Roll 1d6, place that many Imps in forest ring, one per arc, starting at Arc 1
+                    int numImps = Util.roll();
+                    for (int i = 0; i < numImps; ++i){
+                        Imp imp = new Imp();
+                        imp.setArc(Arc.values()[i]);
+                        imp.setRing(Ring.FOREST);
+                        model.getGame().getMonstersOnBoard().add(imp);
+                    }
                     break;
                 }
                 case TROLL_MAGE:{
+                    // Move all monsters
+                    moveMonsters();
                     break;
                 }
                 case NECROMANCER:{
+                    // Put two monsters (not effects) from discard pile to draw pile
+                    model.getGame().getMonsterBag().shuffleDefeated();
+                    int count = 0;
+                    while (count < 2){
+                        Monster monster1 = model.getGame().getMonsterBag().drawDefeatedMonster();
+                        if (monster1 != null && monster1.getType() == MonsterType.EFFECT || monster1.getType() == MonsterType.MEGABOSS)
+                            continue;
+                        model.getGame().getMonsterBag().add(monster1);
+                        count += 1;
+                    }
                     break;
                 }
                 case GOBLIN_KING:{
+                    // place 3 more monster tokens
+                    drawNewMonsters(3);
                     break;
                 }
                 case ORC_WARLORD:{
+                    // Move all monsters in same color 1x
+                    moveMonsters(monster.getArc().getColor());
                     break;
                 }
                 case DOPPELGANGER:{
+                    // Place on board, but do not move.  Gets replaced by next destroyed monster.
+                    placeMonsterOnBoard(monster);
                     break;
                 }
-                case GIANT_BOULDER:{
+                case PHOENIX:{
+                    // When destroyed, all monsters in same space get 1 fire token (but no damage)
+                    model.getGame().getMonstersOnBoard().stream().forEach(monster1 -> {
+                        if (monster1.getArc() == monster.getArc() && monster1.getRing() == monster.getRing() && monster1.getHitpoints() > 0){
+                            monster1.adjFireTokens(1);
+                        }
+                    });
+                    break;
+                }
+                case GIANT_BOULDER:
+                case TREBUCHET:{
                     // Boulder comes from forest and destroys all monsters in path until it hits a wall, tower, or goes off board
-                    rollGiantBoulder(monster);
+                    placeMonsterOnBoard(monster);
+                    rollGiantBoulderOrTrebuchet(monster);
                     break;
                 }
                 case MOVE_2_SPACES:{
@@ -332,15 +532,165 @@ public class Controller {
         model.getGame().getMonstersOnBoard().add(monster);
     }
 
-    private void rollGiantBoulder(Monster monster){
+    private void rollGiantBoulderOrTrebuchet(Monster monster){
         // Boulder comes from forest and destroys all monsters in path until it hits a wall, tower, or goes off board
-        Arc arc = Arc.randomArc();
-        monster.setArc(arc);
-        monster.setRing(Ring.FOREST);
-        model.getGame().getMonstersOnBoard().add(monster);
+        boolean setNextStructureOnFire = false;
 
         for (int i = Ring.FOREST.ordinal(); i >= Ring.CASTLE.ordinal(); --i){
-            // TODO Finish this
+            Ring ring = Ring.values()[i];
+            monster.setRing(ring);
+            model.getGame().getMonstersOnBoard().stream().forEach(monster1 -> {
+                if (monster != monster1 &&
+                        !monster1.hasAbility(MonsterAbility.DOPPELGANGER) &&
+                        monster1.getArc() == monster.getArc() &&
+                        monster1.getRing() == ring &&
+                        ((monster.hasAbility(MonsterAbility.GIANT_BOULDER) && !monster1.hasAbility(MonsterAbility.FLYING) ||
+                                (monster.hasAbility(MonsterAbility.TREBUCHET) && monster1.hasAbility(MonsterAbility.FLYING))))){
+                    monster1.setHitpoints(0);
+                }
+            });
+
+            // Check if next ring contains wall or tower
+            if (ring == Ring.SWORDSMAN) {
+                CastleWall wall = model.getGame().getWall(monster.getArc());
+                if (!wall.isDestroyed()){
+                    if (wall.isFortified()) {
+                        wall.setFortified(false);
+                        if (monster.hasAbility(MonsterAbility.FIRE_STARTER))
+                            wall.adjFireTokens(1);
+                    }
+                    else {
+                        wall.setDestroyed(true);
+                        if (monster.hasAbility(MonsterAbility.FIRE_STARTER))
+                            setNextStructureOnFire = true;
+                    }
+                    if (!setNextStructureOnFire)
+                        return;
+                }
+                CastleTower tower = model.getGame().getTower(monster.getArc());
+                if (!tower.isDestroyed()){
+                    if (setNextStructureOnFire) {
+                        tower.adjFireTokens(1);
+                        return;
+                    }
+                    else {
+                        tower.setDestroyed(true);
+                        if (monster.hasAbility(MonsterAbility.FIRE_STARTER))
+                            setNextStructureOnFire = true;
+                        else
+                            return;
+                    }
+                }
+            }
+        }
+
+        // Keep going on other side of board
+        monster.setArc(monster.getArc().getOpposite());
+        CastleTower tower = model.getGame().getTower(monster.getArc());
+        if (tower != null && !tower.isDestroyed()){
+            if (setNextStructureOnFire) {
+                tower.adjFireTokens(1);
+                return;
+            }
+            else {
+                tower.setDestroyed(true);
+                if (monster.hasAbility(MonsterAbility.FIRE_STARTER))
+                    setNextStructureOnFire = true;
+                else
+                    return;
+            }
+        }
+
+        for (int i = Ring.CASTLE.ordinal(); i <= Ring.FOREST.ordinal(); ++i){
+            Ring ring = Ring.values()[i];
+            monster.setRing(ring);
+            model.getGame().getMonstersOnBoard().stream().forEach(monster1 -> {
+                if (monster != monster1 &&
+                        !monster1.hasAbility(MonsterAbility.DOPPELGANGER) &&
+                        monster1.getArc() == monster.getArc() &&
+                        monster1.getRing() == ring &&
+                        ((monster.hasAbility(MonsterAbility.GIANT_BOULDER) && !monster1.hasAbility(MonsterAbility.FLYING) ||
+                                (monster.hasAbility(MonsterAbility.TREBUCHET) && monster1.hasAbility(MonsterAbility.FLYING))))){
+                        monster1.setHitpoints(0);
+                }
+            });
+
+            // Check if next ring contains wall or tower
+            if (ring == Ring.CASTLE) {
+                CastleWall wall = model.getGame().getWall(monster.getArc());
+                if (!wall.isDestroyed()){
+                    if (wall.isFortified()) {
+                        wall.setFortified(false);
+                        if (monster.hasAbility(MonsterAbility.FIRE_STARTER)) {
+                            wall.adjFireTokens(1);
+                        }
+                    }
+                    else {
+                        if (monster.hasAbility(MonsterAbility.FIRE_STARTER) && setNextStructureOnFire) {
+                            wall.adjFireTokens(1);
+                        } else {
+                            wall.setDestroyed(true);
+                        }
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
+    private void breathFire(Monster monster){
+        // Fireball travels like Giant Boulder, but does not damage monsters.  Add fire token to first structure encountered.
+        CastleWall wall = model.getGame().getWall(monster.getArc());
+        if (!wall.isDestroyed()){
+            if (wall.isFortified()) {
+                wall.setFortified(false);
+            }
+            else {
+                wall.adjFireTokens(1);
+            }
+            return;
+        }
+
+        CastleTower tower = model.getGame().getTower(monster.getArc());
+        if (!tower.isDestroyed()){
+            tower.adjFireTokens(1);
+        }
+
+        // Keep going on other side of board
+        monster.setArc(monster.getArc().getOpposite());
+
+        tower = model.getGame().getTower(monster.getArc());
+        if (!tower.isDestroyed()){
+            tower.adjFireTokens(1);
+            return;
+        }
+
+        wall = model.getGame().getWall(monster.getArc());
+        if (!wall.isDestroyed()){
+            if (wall.isFortified()) {
+                wall.setFortified(false);
+            }
+            else {
+                wall.adjFireTokens(1);
+            }
+        }
+    }
+
+    /**
+     * Add 2 imps for each point of damage to Hydra
+     * @param hydra
+     * @param numDamage
+     */
+    private void handleHydraDamaged(Monster hydra, int numDamage){
+        for (int i = 0; i < numDamage; ++i){
+            Imp imp = new Imp();
+            imp.setRing(Ring.FOREST);
+            imp.setArc(hydra.getArc());
+            model.getGame().getMonstersOnBoard().add(imp);
+            imp = new Imp();
+            imp.setRing(Ring.FOREST);
+            imp.setArc(hydra.getArc());
+            model.getGame().getMonstersOnBoard().add(imp);
         }
     }
 }

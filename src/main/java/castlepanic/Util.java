@@ -14,5 +14,9 @@ public class Util {
         return randInt(0, max);
     }
 
+    public static int roll(){
+        return randInt(6) + 1;
+    }
+
     private Util(){}
 }

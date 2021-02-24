@@ -7,14 +7,15 @@ import java.awt.image.BufferedImage;
 public class CastleTower {
     private Arc arc;
     private boolean destroyed;
-    private boolean onFire;
+    // If 3 fire tokens, destroy tower
+    private int fireTokens;
     private BufferedImage image;
     private boolean wizardTower;
 
     public CastleTower(Arc arc){
         this.arc = arc;
         this.destroyed = false;
-        this.onFire = false;
+        this.fireTokens = 0;
         this.image = ImageUtil.get("Castle Tower_aerial 3.png");
         this.wizardTower = false;
     }
@@ -31,12 +32,20 @@ public class CastleTower {
         this.destroyed = destroyed;
     }
 
-    public boolean isOnFire() {
-        return onFire;
+    public int getFireTokens() {
+        return fireTokens;
     }
 
-    public void setOnFire(boolean onFire) {
-        this.onFire = onFire;
+    public void setFireTokens(int fireTokens) {
+        this.fireTokens = fireTokens;
+        if (this.fireTokens == 3)
+            this.destroyed = true;
+    }
+
+    public void adjFireTokens(int amount){
+        this.fireTokens += amount;
+        if (this.fireTokens == 3)
+            this.destroyed = true;
     }
 
     public BufferedImage getImage() {

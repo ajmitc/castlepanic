@@ -3,7 +3,31 @@ package castlepanic.game.card;
 public enum CardAbility {
     // Castle Panic Cards
     ARCHER_ANY_COLOR,
+    ARCHER_BLUE,
+    ARCHER_GREEN,
+    ARCHER_RED,
+    BARBARIAN,
+    BERSERK,
+    BRICK,
+    CHANGE_COLOR,
+    CHANGE_RANGE,
+    DOUBLE_STRIKE,
+    DRAW_2_CARDS,
+    DRIVE_HIM_BACK,
+    ENCHANTED,
+    FLAMING,
+    FORTIFY_WALL,
+    MORTAR,
 
     // Wizard Cards
-    ARCANE_ASSEMBLY
+    ARCANE_ASSEMBLY,
+    AZRIELS_FIST,
+    BURNING_BLAST,
+    CHAIN_LIGHTNING,
+    EXTINGUISHING_WIND,
+    EYE_OF_THE_ORACLE,
+    FIREBALL_BLUE,
+    FIREBALL_GREEN,
+    FIREBALL_RED,
+    HAMMER_OF_LIGHT,
 }

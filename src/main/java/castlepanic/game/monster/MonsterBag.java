@@ -19,6 +19,13 @@ public class MonsterBag {
         return monsters.remove(0);
     }
 
+    public Monster drawDefeatedMonster(){
+        if (defeatedMonsters.isEmpty()){
+            return null;
+        }
+        return defeatedMonsters.remove(0);
+    }
+
     public void defeat(Monster monster){
         defeatedMonsters.add(monster);
     }
@@ -27,7 +34,15 @@ public class MonsterBag {
         Collections.shuffle(monsters);
     }
 
+    public void shuffleDefeated(){
+        Collections.shuffle(defeatedMonsters);
+    }
+
     public void add(Monster monster){
         monsters.add(monster);
+    }
+
+    public List<Monster> getDefeatedMonsters() {
+        return defeatedMonsters;
     }
 }

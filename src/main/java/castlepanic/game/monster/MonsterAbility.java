@@ -25,6 +25,7 @@ public enum MonsterAbility {
     MOVE_2_SPACES,
     NECROMANCER,
     ORC_WARLORD,
+    PHOENIX,
     PLAGUE_ARCHERS,
     PLAGUE_KNIGHTS,
     PLAGUE_SWORDSMEN,
