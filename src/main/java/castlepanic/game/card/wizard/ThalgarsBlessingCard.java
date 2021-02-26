@@ -7,6 +7,6 @@ import castlepanic.game.card.CardType;
 public class ThalgarsBlessingCard extends Card {
 
     public ThalgarsBlessingCard(){
-        super(CardType.WIZARD, "Thalgar's Blessing", CardAbility.THALGARS_BLESSING, "Thalgard's Blessing.png");
+        super(CardType.WIZARD, "Thalgar's Blessing", CardAbility.THALGARS_BLESSING, "Thalgar's Blessing.png");
     }
 }

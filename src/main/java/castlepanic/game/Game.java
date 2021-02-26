@@ -7,6 +7,7 @@ import castlepanic.game.card.DeckBuilder;
 import castlepanic.game.monster.Monster;
 import castlepanic.game.monster.MonsterBag;
 import castlepanic.game.monster.MonsterBagBuilder;
+import castlepanic.game.monster.MonsterType;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -31,16 +32,13 @@ public class Game {
     private List<CastleWall> walls = new ArrayList<>(6);
 
     public Game() {
-
+        phase = Phase.SETUP;
+        phaseStep = PhaseStep.START_PHASE;
     }
 
     public void setup(){
-        phase = Phase.SETUP;
-        phaseStep = PhaseStep.START_PHASE;
-
         castlePanicDeck = DeckBuilder.buildCastlePanicDeck();
         wizardDeck      = DeckBuilder.buildWizardDeck();
-
         monsterBag      = MonsterBagBuilder.buildMonsterBag();
 
         towers.clear();
@@ -69,12 +67,22 @@ public class Game {
 
     public void addInitialMonstersToBoard(){
         // Randomly choose 6 monsters and add to Archer ring of each Arc
+        monsterBag.shuffle();
         for (Arc arc: Arc.values()){
-            Monster monster = monsterBag.draw();
-            monster.setArc(arc);
-            monster.setRing(Ring.ARCHER);
-            monstersOnBoard.add(monster);
+            while (true) {
+                Monster monster = monsterBag.draw();
+                if (monster.getType() == MonsterType.NORMAL) {
+                    monster.setArc(arc);
+                    monster.setRing(Ring.ARCHER);
+                    monstersOnBoard.add(monster);
+                    break;
+                }
+                else {
+                    monsterBag.add(monster);
+                }
+            }
         }
+        monsterBag.shuffle();
     }
 
     public void addMegaBossesToBag(){

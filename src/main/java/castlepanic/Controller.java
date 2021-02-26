@@ -7,6 +7,8 @@ import castlepanic.game.monster.*;
 import castlepanic.view.View;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +19,23 @@ public class Controller {
     public Controller(Model model, View view){
         this.model = model;
         this.view = view;
+
+        this.view.getMainMenuPanel().getBtnExit().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+
+        this.view.getMainMenuPanel().getBtnNewGame().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Game game = new Game();
+                model.setGame(game);
+                view.showGame();
+                run();
+            }
+        });
     }
 
     public void run(){
@@ -153,10 +172,80 @@ public class Controller {
     }
 
     private void applyCastlePanicCardAbility(CardAbility ability){
-        switch (ability){
-            case ARCHER_ANY_COLOR:{
-                // TODO Hit 1 monster in any color Archer ring
+        switch (ability) {
+            case ARCHER_ANY_COLOR: {
+            }
+            case ARCHER_BLUE: {
+            }
+            case ARCHER_GREEN: {
+            }
+            case ARCHER_RED: {
+            }
+            case BARBARIAN: {
+            }
+            case BERSERK: {
+            }
+            case BRICK: {
+            }
+            case CHANGE_COLOR: {
+                // TODO Select card in hand to change color (set card's ability override)
                 break;
+            }
+            case CHANGE_RANGE: {
+                // TODO Select card in hand to change range (set card's ability override)
+                break;
+            }
+            case DOUBLE_STRIKE: {
+            }
+            case DRAW_2_CARDS: {
+            }
+            case DRIVE_HIM_BACK: {
+            }
+            case ENCHANTED: {
+            }
+            case FLAMING: {
+            }
+            case FORTIFY_WALL: {
+            }
+            case HERO_BLUE: {
+            }
+            case HERO_GREEN: {
+            }
+            case HERO_RED: {
+            }
+            case KNIGHT_ANY_COLOR: {
+            }
+            case KNIGHT_BLUE: {
+            }
+            case KNIGHT_GREEN: {
+            }
+            case KNIGHT_RED: {
+            }
+            case KNOCK_BACK: {
+            }
+            case MISSING: {
+            }
+            case MORTAR: {
+            }
+            case NEVER_LOSE_HOPE: {
+            }
+            case NICE_SHOT: {
+            }
+            case REINFORCE: {
+            }
+            case SCAVENGE: {
+            }
+            case STAND_TOGETHER: {
+            }
+            case SWORDSMAN_ANY_COLOR: {
+            }
+            case SWORDSMAN_BLUE: {
+            }
+            case SWORDSMAN_GREEN: {
+            }
+            case SWORDSMAN_RED: {
+            }
+            case TAR: {
             }
         }
     }
@@ -166,6 +255,48 @@ public class Controller {
             case ARCANE_ASSEMBLY:{
                 // TODO All player may immediately build walls for 1 BrickCard OR 1 Mortar per wall
                 break;
+            }
+            case AZRIELS_FIST: {
+            }
+            case BURNING_BLAST: {
+            }
+            case CHAIN_LIGHTNING: {
+            }
+            case EXTINGUISHING_WIND: {
+            }
+            case EYE_OF_THE_ORACLE: {
+            }
+            case FIREBALL_BLUE: {
+            }
+            case FIREBALL_GREEN: {
+            }
+            case FIREBALL_RED: {
+            }
+            case HAMMER_OF_LIGHT: {
+            }
+            case HYPNOTIZE: {
+            }
+            case LIGHTNING_BOLT: {
+            }
+            case MYSTICAL_MANUFACTURING: {
+            }
+            case RAIN_OF_IRON: {
+            }
+            case RAIN_OF_ICE: {
+            }
+            case RING_OF_FIRE: {
+            }
+            case TELEPORT: {
+            }
+            case THALGARS_BLESSING: {
+            }
+            case VALADORS_WAVE: {
+            }
+            case WALL_OF_FORCE: {
+            }
+            case WAR_STORM: {
+            }
+            case WIZARD_QUAKE: {
             }
         }
     }

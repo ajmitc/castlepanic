@@ -29,7 +29,7 @@ public abstract class Monster {
         this.name = name;
         this.maxHitpoints = maxHitpoints;
         this.hitpoints = maxHitpoints;
-        this.image = ImageUtil.get(imageName);
+        this.image = ImageUtil.get(imageName, 100);
         this.tar = false;
         this.fireTokens = 0;
     }

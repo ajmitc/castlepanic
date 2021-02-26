@@ -10,19 +10,31 @@ public class GamePanel extends JPanel {
     private Model model;
     private View view;
 
-    private BufferedImage boardImage;
+    private BoardPanel boardPanel;
+    private HandPanel handPanel;
 
     public GamePanel(Model model, View view){
         super(new BorderLayout());
         this.model = model;
         this.view = view;
 
-        boardImage = ImageUtil.get("Board 3.png", 1000);
+        boardPanel = new BoardPanel(model, view);
+        handPanel  = new HandPanel(model, view);
 
-        add(new JScrollPane(new JLabel(new ImageIcon(boardImage))), BorderLayout.CENTER);
+        add(boardPanel, BorderLayout.CENTER);
+        add(handPanel, BorderLayout.SOUTH);
     }
 
     public void refresh(){
+        boardPanel.refresh();
+        handPanel.refresh();
+    }
 
+    public BoardPanel getBoardPanel() {
+        return boardPanel;
+    }
+
+    public HandPanel getHandPanel() {
+        return handPanel;
     }
 }

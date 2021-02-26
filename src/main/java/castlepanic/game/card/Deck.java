@@ -22,6 +22,7 @@ public class Deck {
     }
 
     public void discard(Card card){
+        card.setAbilityOverride(null);
         discardPile.add(card);
     }
 
