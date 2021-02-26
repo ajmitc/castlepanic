@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Game {
     public static final int HAND_SIZE = 6;
@@ -124,6 +125,14 @@ public class Game {
 
     public List<Card> getHand() {
         return hand;
+    }
+
+    public List<Card> getSelectedCardsInHand(){
+        return hand.stream().filter(card -> card.isSelected()).collect(Collectors.toList());
+    }
+
+    public void deselectAllCards(){
+        hand.stream().forEach(card -> card.setSelected(false));
     }
 
     public List<CastleTower> getTowers() {

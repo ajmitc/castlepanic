@@ -5,18 +5,24 @@ import castlepanic.view.ImageUtil;
 import java.awt.image.BufferedImage;
 
 public abstract class Card {
+    public static final int CARD_WIDTH = 150;
     protected CardType type;
     protected String name;
     protected BufferedImage cardImage;
     protected CardAbility ability;
     protected CardAbility abilityOverride; // Used for Change Color and Change Range effects
 
+    // Current location of card on screen
+    protected int px, py;
+    protected boolean selected;
+
     public Card(CardType type, String name, CardAbility ability, String imageName){
         this.type = type;
         this.name = name;
         this.ability = ability;
-        this.cardImage = ImageUtil.get(imageName);
+        this.cardImage = ImageUtil.get(imageName, CARD_WIDTH);
         this.abilityOverride = null;
+        selected = false;
     }
 
     public CardType getType() {
@@ -39,5 +45,22 @@ public abstract class Card {
 
     public void setAbilityOverride(CardAbility abilityOverride) {
         this.abilityOverride = abilityOverride;
+    }
+
+    public void setLocation(int px, int py){
+        this.px = px;
+        this.py = py;
+    }
+
+    public boolean contains(int px, int py) {
+        return px >= this.px && py >= this.py && px < this.px + cardImage.getWidth() && py < this.py + cardImage.getHeight();
+    }
+
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 }

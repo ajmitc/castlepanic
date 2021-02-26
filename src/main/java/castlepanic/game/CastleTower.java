@@ -16,7 +16,7 @@ public class CastleTower {
         this.arc = arc;
         this.destroyed = false;
         this.fireTokens = 0;
-        this.image = ImageUtil.get("Castle Tower_aerial 3.png");
+        this.image = ImageUtil.get("Castle Tower_aerial 3.png", 75);
         this.wizardTower = false;
     }
 
@@ -60,6 +60,6 @@ public class CastleTower {
 
     public void setWizardTower() {
         this.wizardTower = true;
-        this.image = ImageUtil.get("Wizard Tower_aerial 3.png");
+        this.image = ImageUtil.get("Wizard Tower_aerial 3.png", 80);
     }
 }

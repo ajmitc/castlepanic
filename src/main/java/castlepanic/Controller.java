@@ -3,12 +3,16 @@ package castlepanic;
 import castlepanic.game.*;
 import castlepanic.game.card.Card;
 import castlepanic.game.card.CardAbility;
+import castlepanic.game.card.CardType;
 import castlepanic.game.monster.*;
 import castlepanic.view.View;
+import castlepanic.view.ViewUtil;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +38,23 @@ public class Controller {
                 model.setGame(game);
                 view.showGame();
                 run();
+            }
+        });
+
+        this.view.getGamePanel().getHandPanel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+                Card selectedCard = view.getGamePanel().getHandPanel().getSelected(e.getX(), e.getY());
+                if (selectedCard != null){
+                    selectedCard.setSelected(!selectedCard.isSelected());
+                    if (e.getClickCount() >= 2 &&
+                            (model.getGame().getPhaseStep() == PhaseStep.PLAY_DISCARD_AND_DRAW_1 ||
+                                    model.getGame().getPhaseStep() == PhaseStep.PLAY_ASK_DISCARD_AND_DRAW_2 ||
+                                    model.getGame().getPhaseStep() == PhaseStep.PLAY_SELECTED_CARDS)){
+                        run();
+                    }
+                }
             }
         });
     }
@@ -71,20 +92,86 @@ public class Controller {
                             model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW_1);
                             break;
                         }
+                        case PLAY_ASK_DISCARD_AND_DRAW_1:{
+                            // Ask player if they want to discard and draw
+                            if (ViewUtil.popupConfirm("Discard and Draw", "Do you want to discard and draw?")){
+                                model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW_1);
+                                return;
+                            }
+                            else
+                                model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_CHOOSE_CARDS);
+                            break;
+                        }
                         case PLAY_DISCARD_AND_DRAW_1:{
-                            // TODO Ask player if they want to discard and draw
-                            // TODO Solo rules allow 2x
-                            model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW_2);
+                            List<Card> selectedCards = model.getGame().getSelectedCardsInHand();
+                            if (!selectedCards.isEmpty()) {
+                                if (selectedCards.size() > 1){
+                                    ViewUtil.popupNotify("You can only discard one card");
+                                    model.getGame().deselectAllCards();
+                                    return;
+                                }
+                                Card selectedCard = selectedCards.get(0);
+                                if (selectedCard.getType() == CardType.CASTLEPANIC)
+                                    model.getGame().getCastlePanicDeck().discard(selectedCard);
+                                else
+                                    model.getGame().getWizardDeck().discard(selectedCard);
+                                model.getGame().getHand().remove(selectedCard);
+                                if (ViewUtil.popupConfirm("Discard and Draw", "Do you want to draw a Wizard card?"))
+                                    model.getGame().getHand().add(model.getGame().getWizardDeck().draw());
+                                else
+                                    model.getGame().getHand().add(model.getGame().getCastlePanicDeck().draw());
+                                model.getGame().setPhaseStep(PhaseStep.PLAY_ASK_DISCARD_AND_DRAW_2);
+                                break;
+                            }
+                            model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_CHOOSE_CARDS);
+                            break;
+                        }
+                        case PLAY_ASK_DISCARD_AND_DRAW_2:{
+                            // Ask player if they want to discard and draw
+                            if (ViewUtil.popupConfirm("Discard and Draw", "Do you want to discard and draw again?")){
+                                model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW_2);
+                                return;
+                            }
+                            else
+                                model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_CHOOSE_CARDS);
                             break;
                         }
                         case PLAY_DISCARD_AND_DRAW_2:{
-                            model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS);
+                            List<Card> selectedCards = model.getGame().getSelectedCardsInHand();
+                            if (!selectedCards.isEmpty()) {
+                                if (selectedCards.size() > 1){
+                                    ViewUtil.popupNotify("You can only discard one card");
+                                    model.getGame().deselectAllCards();
+                                    return;
+                                }
+                                Card selectedCard = selectedCards.get(0);
+                                if (selectedCard.getType() == CardType.CASTLEPANIC)
+                                    model.getGame().getCastlePanicDeck().discard(selectedCard);
+                                else
+                                    model.getGame().getWizardDeck().discard(selectedCard);
+                                model.getGame().getHand().remove(selectedCard);
+                                if (ViewUtil.popupConfirm("Discard and Draw", "Do you want to draw a Wizard card?"))
+                                    model.getGame().getHand().add(model.getGame().getWizardDeck().draw());
+                                else
+                                    model.getGame().getHand().add(model.getGame().getCastlePanicDeck().draw());
+                            }
+                            model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_CHOOSE_CARDS);
                             break;
                         }
-                        case PLAY_CARDS:{
-                            // TODO Ask player to choose a card to play
-                            // TODO When Hydra is damaged (but not slain), add 2 Imps to FOREST ring of same Arc as Hydra
-                            // TODO Warlock unaffected by wizard cards
+                        case PLAY_CARDS_CHOOSE_CARDS:{
+                            // Ask player to choose a card to play
+                            ViewUtil.popupNotify("Play cards");
+                            model.getGame().setPhaseStep(PhaseStep.PLAY_SELECTED_CARDS);
+                            return;
+                        }
+                        case PLAY_SELECTED_CARDS:{
+                            List<Card> selectedCards = model.getGame().getSelectedCardsInHand();
+                            if (!selectedCards.isEmpty()) {
+                                // TODO When Hydra is damaged (but not slain), add 2 Imps to FOREST ring of same Arc as Hydra
+                                // TODO Warlock unaffected by wizard cards
+                                model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_CHOOSE_CARDS);
+                                break;
+                            }
                             model.getGame().setPhaseStep(PhaseStep.PLAY_MOVE_MONSTERS);
                             return;
                         }

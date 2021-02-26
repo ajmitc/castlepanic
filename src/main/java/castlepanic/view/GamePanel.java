@@ -22,7 +22,7 @@ public class GamePanel extends JPanel {
         handPanel  = new HandPanel(model, view);
 
         add(boardPanel, BorderLayout.CENTER);
-        add(handPanel, BorderLayout.SOUTH);
+        add(handPanel, BorderLayout.EAST);
     }
 
     public void refresh(){

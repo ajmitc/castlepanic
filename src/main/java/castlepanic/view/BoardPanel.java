@@ -2,6 +2,8 @@ package castlepanic.view;
 
 import castlepanic.Model;
 import castlepanic.game.Arc;
+import castlepanic.game.CastleTower;
+import castlepanic.game.CastleWall;
 import castlepanic.game.Ring;
 import castlepanic.game.monster.Monster;
 
@@ -17,9 +19,13 @@ public class BoardPanel extends JPanel {
     private static final Point CENTER_POINT = new Point(490, 487);
     private static final double ARC_DEGREES = 60.0;
     private static final Map<Arc, Map<Ring, Point>> boardCoords = new HashMap<>();
+    private static final Map<Arc, Point> wallCoords = new HashMap<>();
+    private static final Map<Arc, Point> fortCoords = new HashMap<>();
 
     static {
         Arrays.stream(Arc.values()).forEach(arc -> {
+            wallCoords.put(arc, new Point());
+            fortCoords.put(arc, new Point());
             boardCoords.put(arc, new HashMap<>());
             Arrays.stream(Ring.values()).forEach(ring -> {
                 boardCoords.get(arc).put(ring, new Point());
@@ -61,11 +67,26 @@ public class BoardPanel extends JPanel {
         boardCoords.get(Arc.ARC_6).get(Ring.KNIGHT).setLocation(267, 624);
         boardCoords.get(Arc.ARC_6).get(Ring.ARCHER).setLocation(190, 665);
         boardCoords.get(Arc.ARC_6).get(Ring.FOREST).setLocation(110, 705);
+
+        wallCoords.get(Arc.ARC_1).setLocation(345, 365);
+        wallCoords.get(Arc.ARC_2).setLocation(415, 365);
+        wallCoords.get(Arc.ARC_3).setLocation(550, 368);
+        wallCoords.get(Arc.ARC_4).setLocation(545, 488);
+        wallCoords.get(Arc.ARC_5).setLocation(412, 585);
+        wallCoords.get(Arc.ARC_6).setLocation(347, 488);
+
+        fortCoords.get(Arc.ARC_1).setLocation(365, 395);
+        fortCoords.get(Arc.ARC_2).setLocation(465, 355);
+        fortCoords.get(Arc.ARC_3).setLocation(570, 398);
+        fortCoords.get(Arc.ARC_4).setLocation(565, 508);
+        fortCoords.get(Arc.ARC_5).setLocation(462, 585);
+        fortCoords.get(Arc.ARC_6).setLocation(360, 518);
     }
 
     private Model model;
     private View view;
     private BufferedImage boardImage;
+    private BufferedImage fortificationImage;
     private int mx, my;
 
     public BoardPanel(Model model, View view){
@@ -74,6 +95,10 @@ public class BoardPanel extends JPanel {
         this.view = view;
 
         boardImage = ImageUtil.get("Board 3.png", 1200);
+        fortificationImage = ImageUtil.get("Fortification_new.png", 50);
+
+        setPreferredSize(new Dimension(boardImage.getWidth(), boardImage.getHeight()));
+        setSize(new Dimension(boardImage.getWidth(), boardImage.getHeight()));
 
         addMouseMotionListener(new MouseAdapter() {
             @Override
@@ -90,6 +115,26 @@ public class BoardPanel extends JPanel {
         Graphics2D g = (Graphics2D) graphics;
 
         g.drawImage(boardImage, 0, 0, null);
+
+        // Draw castle structures
+        for (CastleWall wall: model.getGame().getWalls()){
+            Point p = wallCoords.get(wall.getArc());
+            BufferedImage image = wall.getImage();
+            g.drawImage(image, p.x, p.y, null);
+            if (wall.isFortified()){
+                p = fortCoords.get(wall.getArc());
+                BufferedImage rotated = ImageUtil.rotateImageByDegrees(fortificationImage, getMonsterRotationDegrees(wall.getArc()));
+                g.drawImage(rotated, p.x, p.y, null);
+            }
+        }
+
+        for (CastleTower tower: model.getGame().getTowers()){
+            Point p = boardCoords.get(tower.getArc()).get(Ring.CASTLE);
+            BufferedImage image = tower.getImage();
+            int x = p.x - (image.getWidth() / 2);
+            int y = p.y - (image.getHeight() / 2);
+            g.drawImage(image, x, y, null);
+        }
 
         // Draw monsters
         Map<Arc, Map<Ring, List<Monster>>> monstersByLocation = new HashMap<>();
