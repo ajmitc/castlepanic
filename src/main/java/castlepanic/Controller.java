@@ -14,11 +14,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class Controller {
     private Model model;
     private View view;
+
+    private MonsterTargetCriteria monsterTargetCriteria = new MonsterTargetCriteria();
+    private Monster selectedMonster;
 
     public Controller(Model model, View view){
         this.model = model;
@@ -41,19 +45,34 @@ public class Controller {
             }
         });
 
+        this.view.getGamePanel().getBoardPanel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                // TODO Check if user clicked on monster, if so and monster matches criteria, set selectedMonster
+                run();
+            }
+        });
+
         this.view.getGamePanel().getHandPanel().addMouseListener(new MouseAdapter() {
             @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
                 Card selectedCard = view.getGamePanel().getHandPanel().getSelected(e.getX(), e.getY());
                 if (selectedCard != null){
                     selectedCard.setSelected(!selectedCard.isSelected());
-                    if (e.getClickCount() >= 2 &&
-                            (model.getGame().getPhaseStep() == PhaseStep.PLAY_DISCARD_AND_DRAW_1 ||
-                                    model.getGame().getPhaseStep() == PhaseStep.PLAY_ASK_DISCARD_AND_DRAW_2 ||
-                                    model.getGame().getPhaseStep() == PhaseStep.PLAY_SELECTED_CARDS)){
-                        run();
-                    }
+                    view.refresh();
+                }
+            }
+        });
+
+        this.view.getGamePanel().getDoneButtonPanel().getBtnDone().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if ((model.getGame().getPhaseStep() == PhaseStep.PLAY_DISCARD_AND_DRAW_1 ||
+                        model.getGame().getPhaseStep() == PhaseStep.PLAY_ASK_DISCARD_AND_DRAW_2 ||
+                        model.getGame().getPhaseStep() == PhaseStep.PLAY_SELECTED_CARDS)){
+                    run();
                 }
             }
         });
@@ -89,7 +108,7 @@ public class Controller {
                             while (model.getGame().getHand().size() < Game.HAND_SIZE){
                                 model.getGame().getHand().add(model.getGame().getCastlePanicDeck().draw());
                             }
-                            model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW_1);
+                            model.getGame().setPhaseStep(PhaseStep.PLAY_ASK_DISCARD_AND_DRAW_1);
                             break;
                         }
                         case PLAY_ASK_DISCARD_AND_DRAW_1:{
@@ -167,8 +186,24 @@ public class Controller {
                         case PLAY_SELECTED_CARDS:{
                             List<Card> selectedCards = model.getGame().getSelectedCardsInHand();
                             if (!selectedCards.isEmpty()) {
+                                ViewUtil.popupNotify("Playing " + selectedCards.size() + " cards");
                                 // TODO When Hydra is damaged (but not slain), add 2 Imps to FOREST ring of same Arc as Hydra
                                 // TODO Warlock unaffected by wizard cards
+                                Iterator<Card> cardIterator = selectedCards.iterator();
+                                while (cardIterator.hasNext()){
+                                    Card card = cardIterator.next();
+                                    if (applyCardAbility(card)){
+                                        model.getGame().getHand().remove(card);
+                                        if (card.getType() == CardType.WIZARD)
+                                            model.getGame().getWizardDeck().discard(card);
+                                        else
+                                            model.getGame().getCastlePanicDeck().discard(card);
+                                        cardIterator.remove();
+                                    }
+                                    else
+                                        return;
+                                }
+
                                 model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_CHOOSE_CARDS);
                                 break;
                             }
@@ -247,28 +282,76 @@ public class Controller {
         }
     }
 
-    private void applyCardAbility(Card card){
+    private boolean applyCardAbility(Card card){
         switch (card.getType()){
             case CASTLEPANIC:
-                applyCastlePanicCardAbility(card.getAbility());
-                break;
+                return applyCastlePanicCardAbility(card.getAbility());
             case WIZARD:
-                applyWizardCardAbility(card.getAbility());
-                break;
+                return applyWizardCardAbility(card.getAbility());
         }
+        return true;
     }
 
-    private void applyCastlePanicCardAbility(CardAbility ability){
+    /**
+     *
+     * @param ability
+     * @return true if card resolved and controller can proceed to next card, false if controller should wait for user input
+     */
+    private boolean applyCastlePanicCardAbility(CardAbility ability){
         switch (ability) {
             case ARCHER_ANY_COLOR: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Ring.ARCHER);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.ARCHER){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case ARCHER_BLUE: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Color.BLUE, Ring.ARCHER);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.ARCHER && selectedMonster.getArc().getColor() == Color.BLUE){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case ARCHER_GREEN: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Color.GREEN, Ring.ARCHER);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.ARCHER && selectedMonster.getArc().getColor() == Color.GREEN){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case ARCHER_RED: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Color.RED, Ring.ARCHER);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.ARCHER && selectedMonster.getArc().getColor() == Color.RED){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case BARBARIAN: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.slayAnyMonster();
+                    return false;
+                }
+                else {
+                    selectedMonster.setHitpoints(0);
+                    return true;
+                }
             }
             case BERSERK: {
             }
@@ -301,12 +384,48 @@ public class Controller {
             case HERO_RED: {
             }
             case KNIGHT_ANY_COLOR: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Ring.KNIGHT);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.KNIGHT){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case KNIGHT_BLUE: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Color.BLUE, Ring.KNIGHT);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.KNIGHT && selectedMonster.getArc().getColor() == Color.BLUE){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case KNIGHT_GREEN: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Color.GREEN, Ring.KNIGHT);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.KNIGHT && selectedMonster.getArc().getColor() == Color.GREEN){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case KNIGHT_RED: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Color.RED, Ring.KNIGHT);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.KNIGHT && selectedMonster.getArc().getColor() == Color.RED){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case KNOCK_BACK: {
             }
@@ -325,19 +444,65 @@ public class Controller {
             case STAND_TOGETHER: {
             }
             case SWORDSMAN_ANY_COLOR: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Ring.SWORDSMAN);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.SWORDSMAN){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case SWORDSMAN_BLUE: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Color.BLUE, Ring.SWORDSMAN);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.SWORDSMAN && selectedMonster.getArc().getColor() == Color.BLUE){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case SWORDSMAN_GREEN: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Color.GREEN, Ring.SWORDSMAN);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.SWORDSMAN && selectedMonster.getArc().getColor() == Color.GREEN){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case SWORDSMAN_RED: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.target(Color.RED, Ring.SWORDSMAN);
+                    return false;
+                }
+                else if (selectedMonster.getRing() == Ring.SWORDSMAN && selectedMonster.getArc().getColor() == Color.RED){
+                    selectedMonster.adjHitpoints(-1);
+                    return true;
+                }
+                return false;
             }
             case TAR: {
+                if (selectedMonster == null) {
+                    monsterTargetCriteria.reset();
+                    monsterTargetCriteria.anyMonsterOnBoard = true;
+                    return false;
+                }
+                else {
+                    selectedMonster.setTar(true);
+                    return true;
+                }
             }
         }
+        return true;
     }
 
-    private void applyWizardCardAbility(CardAbility ability){
+    private boolean applyWizardCardAbility(CardAbility ability){
         switch (ability){
             case ARCANE_ASSEMBLY:{
                 // TODO All player may immediately build walls for 1 BrickCard OR 1 Mortar per wall
@@ -386,6 +551,7 @@ public class Controller {
             case WIZARD_QUAKE: {
             }
         }
+        return true;
     }
 
     private void moveMonsters(){
@@ -909,6 +1075,40 @@ public class Controller {
             imp.setRing(Ring.FOREST);
             imp.setArc(hydra.getArc());
             model.getGame().getMonstersOnBoard().add(imp);
+        }
+    }
+
+    private static class MonsterTargetCriteria{
+        public Color color;
+        public Arc arc;
+        public Ring ring;
+
+        public boolean anyMonsterOnBoard;
+        public boolean slay;
+
+        public void reset(){
+            this.color = null;
+            this.arc = null;
+            this.ring = null;
+            this.anyMonsterOnBoard = false;
+            this.slay = false;
+        }
+
+        public void target(Color color, Ring ring){
+            reset();
+            this.color = color;
+            this.ring = ring;
+        }
+
+        public void target(Ring ring){
+            reset();
+            this.ring = ring;
+        }
+
+        public void slayAnyMonster(){
+            reset();
+            this.slay = true;
+            this.anyMonsterOnBoard = true;
         }
     }
 }

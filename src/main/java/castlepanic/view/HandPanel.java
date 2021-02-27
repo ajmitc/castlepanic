@@ -15,12 +15,12 @@ public class HandPanel extends JPanel {
         super();
         this.model = model;
         this.view = view;
-        setPreferredSize(new Dimension(Card.CARD_WIDTH * 3, view.getFrame().getHeight()));
+        setPreferredSize(new Dimension(Card.CARD_WIDTH * 3, view.getGamePanel().getBoardPanel().getPreferredSize().height));
     }
 
     public void paintComponent(Graphics graphics){
-        graphics.setColor(Color.RED);
-        graphics.fillRect(0, 0, 100, 100);
+        graphics.setColor(Color.WHITE);
+        graphics.fillRect(0, 0, getWidth(), getHeight());
 
         if (model.getGame() != null && model.getGame().getHand() != null){
             int x = 0;
@@ -33,9 +33,17 @@ public class HandPanel extends JPanel {
                 card.setLocation(x, y);
                 BufferedImage bi = card.getCardImage();
                 graphics.drawImage(bi, x, y, null);
+                x = (i % maxColumns) * bi.getWidth();
+                y = (i / maxColumns) * bi.getHeight();
+            }
+
+            for (int i = 0; i < model.getGame().getHand().size(); ++i){
+                Card card = model.getGame().getHand().get(i);
+                card.setLocation(x, y);
+                BufferedImage bi = card.getCardImage();
                 if (card.isSelected()){
                     graphics.setColor(Color.GREEN);
-                    graphics.drawRect(x, y, card.getCardImage().getWidth(), card.getCardImage().getHeight());
+                    graphics.drawRect(x, y, bi.getWidth(), bi.getHeight());
                 }
                 x = (i % maxColumns) * bi.getWidth();
                 y = (i / maxColumns) * bi.getHeight();

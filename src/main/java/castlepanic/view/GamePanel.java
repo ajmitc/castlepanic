@@ -4,7 +4,6 @@ import castlepanic.Model;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 
 public class GamePanel extends JPanel {
     private Model model;
@@ -12,6 +11,7 @@ public class GamePanel extends JPanel {
 
     private BoardPanel boardPanel;
     private HandPanel handPanel;
+    private DoneButtonPanel doneButtonPanel;
 
     public GamePanel(Model model, View view){
         super(new BorderLayout());
@@ -20,9 +20,14 @@ public class GamePanel extends JPanel {
 
         boardPanel = new BoardPanel(model, view);
         handPanel  = new HandPanel(model, view);
+        doneButtonPanel = new DoneButtonPanel(model, view);
+
+        JPanel eastPanel = new JPanel(new BorderLayout());
+        eastPanel.add(handPanel, BorderLayout.CENTER);
+        eastPanel.add(doneButtonPanel, BorderLayout.SOUTH);
 
         add(boardPanel, BorderLayout.CENTER);
-        add(handPanel, BorderLayout.EAST);
+        add(eastPanel, BorderLayout.EAST);
     }
 
     public void refresh(){
@@ -36,5 +41,9 @@ public class GamePanel extends JPanel {
 
     public HandPanel getHandPanel() {
         return handPanel;
+    }
+
+    public DoneButtonPanel getDoneButtonPanel() {
+        return doneButtonPanel;
     }
 }

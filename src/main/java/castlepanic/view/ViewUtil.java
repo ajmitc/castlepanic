@@ -9,7 +9,7 @@ public class ViewUtil {
 
     public static boolean popupConfirm(String title, String message){
         int ret = JOptionPane.showConfirmDialog(null, message, title, JOptionPane.YES_NO_OPTION);
-        return ret >= 1;
+        return ret == 0;
     }
 
     private ViewUtil(){}
