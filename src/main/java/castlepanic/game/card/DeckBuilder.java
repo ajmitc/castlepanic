@@ -37,12 +37,13 @@ public class DeckBuilder {
         deck.add(new NiceShotCard());
         deck.add(new ReinforceCard());
         deck.add(new ScavengeCard());
-        deck.add(new StandTogetherCard());
+        //deck.add(new StandTogetherCard());
         deck.add(new SwordsmanAnyColorCard());
         deck.add(new SwordsmanBlueCard());
         deck.add(new SwordsmanGreenCard());
         deck.add(new SwordsmanRedCard());
         deck.add(new TarCard());
+        deck.shuffle();
         return deck;
     }
 

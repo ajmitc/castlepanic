@@ -2,6 +2,7 @@ package castlepanic.game;
 
 import castlepanic.view.ImageUtil;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class CastleWall {
@@ -13,6 +14,8 @@ public class CastleWall {
     private int fireTokens;
     private boolean fortified;
     private BufferedImage image;
+
+    private Rectangle bounds = new Rectangle();
 
     public CastleWall(Arc arc){
         this.arc = arc;
@@ -88,5 +91,9 @@ public class CastleWall {
 
     public void setFortified(boolean fortified) {
         this.fortified = fortified;
+    }
+
+    public Rectangle getBounds() {
+        return bounds;
     }
 }

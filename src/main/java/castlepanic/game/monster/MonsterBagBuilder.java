@@ -20,7 +20,6 @@ public class MonsterBagBuilder {
         for (int i = 0; i < 2; ++i)
             bag.add(new GoblinCavalry());
         bag.add(new Golem());
-        bag.add(new Imp());
         for (int i = 0; i < 3; ++i)
             bag.add(new Ogre());
         for (int i = 0; i < 5; ++i)

@@ -19,7 +19,7 @@ public class GamePanel extends JPanel {
         this.view = view;
 
         boardPanel = new BoardPanel(model, view);
-        handPanel  = new HandPanel(model, view);
+        handPanel  = new HandPanel(model, view, boardPanel.getPreferredSize().height);
         doneButtonPanel = new DoneButtonPanel(model, view);
 
         JPanel eastPanel = new JPanel(new BorderLayout());
@@ -28,6 +28,10 @@ public class GamePanel extends JPanel {
 
         add(boardPanel, BorderLayout.CENTER);
         add(eastPanel, BorderLayout.EAST);
+    }
+
+    public void init(){
+        boardPanel.init();
     }
 
     public void refresh(){

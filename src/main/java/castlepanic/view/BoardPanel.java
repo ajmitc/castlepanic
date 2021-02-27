@@ -35,7 +35,7 @@ public class BoardPanel extends JPanel {
         boardCoords.get(Arc.ARC_1).get(Ring.CASTLE).setLocation(420, 446);
         boardCoords.get(Arc.ARC_1).get(Ring.SWORDSMAN).setLocation(340, 405);
         boardCoords.get(Arc.ARC_1).get(Ring.KNIGHT).setLocation(264, 350);
-        boardCoords.get(Arc.ARC_1).get(Ring.ARCHER).setLocation(185, 315);
+        boardCoords.get(Arc.ARC_1).get(Ring.ARCHER).setLocation(175, 305);
         boardCoords.get(Arc.ARC_1).get(Ring.FOREST).setLocation(110, 275);
 
         boardCoords.get(Arc.ARC_2).get(Ring.CASTLE).setLocation(490, 410);
@@ -87,6 +87,11 @@ public class BoardPanel extends JPanel {
     private View view;
     private BufferedImage boardImage;
     private BufferedImage fortificationImage;
+
+    // Show details of this monster
+    private Monster monsterDetails = null;
+    private int monsterDetailsMx, monsterDetailsMy;
+
     private int mx, my;
 
     public BoardPanel(Model model, View view){
@@ -111,6 +116,14 @@ public class BoardPanel extends JPanel {
         });
     }
 
+    public void init(){
+        for (CastleWall wall: model.getGame().getWalls()) {
+            Point p = wallCoords.get(wall.getArc());
+            BufferedImage image = wall.getImage();
+            wall.getBounds().setBounds(p.x, p.y, image.getWidth(), image.getHeight());
+        }
+    }
+
     public void paintComponent(Graphics graphics){
         Graphics2D g = (Graphics2D) graphics;
 
@@ -129,11 +142,13 @@ public class BoardPanel extends JPanel {
         }
 
         for (CastleTower tower: model.getGame().getTowers()){
-            Point p = boardCoords.get(tower.getArc()).get(Ring.CASTLE);
-            BufferedImage image = tower.getImage();
-            int x = p.x - (image.getWidth() / 2);
-            int y = p.y - (image.getHeight() / 2);
-            g.drawImage(image, x, y, null);
+            if (!tower.isDestroyed()) {
+                Point p = boardCoords.get(tower.getArc()).get(Ring.CASTLE);
+                BufferedImage image = tower.getImage();
+                int x = p.x - (image.getWidth() / 2);
+                int y = p.y - (image.getHeight() / 2);
+                g.drawImage(image, x, y, null);
+            }
         }
 
         // Draw monsters
@@ -151,11 +166,15 @@ public class BoardPanel extends JPanel {
                     Point point = points.get(i);
                     int x = point.x - (monster.getImage().getWidth() / 2);
                     int y = point.y - (monster.getImage().getHeight() / 2);
-                    BufferedImage image = ImageUtil.rotateImageByDegrees(monster.getImage(), getMonsterRotationDegrees(monster.getArc()));
+                    double rotation = monster.getDamageRotationDegrees(getMonsterRotationDegrees(monster.getArc()));
+                    BufferedImage image = ImageUtil.rotateImageByDegrees(monster.getImage(), rotation);
+                    monster.getBounds().setBounds(x, y, image.getWidth(), image.getHeight());
                     g.drawImage(image, x, y, null);
                 }
             }
         }
+
+        drawMonsterDetails(g);
 
         g.setColor(Color.WHITE);
         for (Point p: getSpaceCoords(Arc.ARC_4, Ring.KNIGHT, 4)){
@@ -164,6 +183,14 @@ public class BoardPanel extends JPanel {
         }
 
         g.drawString(mx + ", " + my, 20, 20);
+    }
+
+    private void drawMonsterDetails(Graphics2D g){
+        if (monsterDetails == null)
+            return;
+        if (monsterDetailsMy + monsterDetails.getOriImage().getHeight() > getHeight())
+            monsterDetailsMy -= monsterDetails.getOriImage().getHeight();
+        g.drawImage(monsterDetails.getOriImage(), monsterDetailsMx, monsterDetailsMy, null);
     }
 
     public void refresh(){
@@ -247,5 +274,11 @@ public class BoardPanel extends JPanel {
             }
         }
         return 0.0;
+    }
+
+    public void setMonsterDetails(Monster monsterDetails) {
+        this.monsterDetails = monsterDetails;
+        this.monsterDetailsMx = mx;
+        this.monsterDetailsMy = my;
     }
 }

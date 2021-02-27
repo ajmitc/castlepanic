@@ -31,6 +31,10 @@ public class View {
         this.frame.getContentPane().add(gamePanel, GAME);
     }
 
+    public void init(){
+        gamePanel.init();
+    }
+
     public void refresh(){
         gamePanel.refresh();
     }

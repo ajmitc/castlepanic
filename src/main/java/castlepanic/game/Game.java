@@ -4,10 +4,7 @@ import castlepanic.Util;
 import castlepanic.game.card.Card;
 import castlepanic.game.card.Deck;
 import castlepanic.game.card.DeckBuilder;
-import castlepanic.game.monster.Monster;
-import castlepanic.game.monster.MonsterBag;
-import castlepanic.game.monster.MonsterBagBuilder;
-import castlepanic.game.monster.MonsterType;
+import castlepanic.game.monster.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -35,6 +32,20 @@ public class Game {
     public Game() {
         phase = Phase.SETUP;
         phaseStep = PhaseStep.START_PHASE;
+
+        walls.add(new CastleWall(Arc.ARC_1));
+        walls.add(new CastleWall(Arc.ARC_2));
+        walls.add(new CastleWall(Arc.ARC_3));
+        walls.add(new CastleWall(Arc.ARC_4));
+        walls.add(new CastleWall(Arc.ARC_5));
+        walls.add(new CastleWall(Arc.ARC_6));
+
+        towers.add(new CastleTower(Arc.ARC_1));
+        towers.add(new CastleTower(Arc.ARC_2));
+        towers.add(new CastleTower(Arc.ARC_3));
+        towers.add(new CastleTower(Arc.ARC_4));
+        towers.add(new CastleTower(Arc.ARC_5));
+        towers.add(new CastleTower(Arc.ARC_6));
     }
 
     public void setup(){
@@ -42,13 +53,7 @@ public class Game {
         wizardDeck      = DeckBuilder.buildWizardDeck();
         monsterBag      = MonsterBagBuilder.buildMonsterBag();
 
-        towers.clear();
-        towers.add(new CastleTower(Arc.ARC_1));
-        towers.add(new CastleTower(Arc.ARC_2));
-        towers.add(new CastleTower(Arc.ARC_3));
-        towers.add(new CastleTower(Arc.ARC_4));
-        towers.add(new CastleTower(Arc.ARC_5));
-        towers.add(new CastleTower(Arc.ARC_6));
+        towers.stream().forEach(tower -> tower.setDestroyed(false));
 
         Arc wizardTowerArc = Arc.values()[Util.randInt(Arc.values().length)];
         towers.stream().forEach(tower -> {
@@ -57,13 +62,7 @@ public class Game {
             }
         });
 
-        walls.clear();
-        walls.add(new CastleWall(Arc.ARC_1));
-        walls.add(new CastleWall(Arc.ARC_2));
-        walls.add(new CastleWall(Arc.ARC_3));
-        walls.add(new CastleWall(Arc.ARC_4));
-        walls.add(new CastleWall(Arc.ARC_5));
-        walls.add(new CastleWall(Arc.ARC_6));
+        walls.stream().forEach(wall -> wall.setDestroyed(false));
     }
 
     public void addInitialMonstersToBoard(){
@@ -72,7 +71,7 @@ public class Game {
         for (Arc arc: Arc.values()){
             while (true) {
                 Monster monster = monsterBag.draw();
-                if (monster.getType() == MonsterType.NORMAL) {
+                if (monster.getType() == MonsterType.NORMAL && !monster.hasAbility(MonsterAbility.DOPPELGANGER)) {
                     monster.setArc(arc);
                     monster.setRing(Ring.ARCHER);
                     monstersOnBoard.add(monster);

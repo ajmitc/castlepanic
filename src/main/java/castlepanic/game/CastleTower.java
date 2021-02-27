@@ -49,8 +49,6 @@ public class CastleTower {
     }
 
     public BufferedImage getImage() {
-        if (destroyed)
-            return null;
         return image;
     }
 

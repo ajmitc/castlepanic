@@ -45,4 +45,8 @@ public class MonsterBag {
     public List<Monster> getDefeatedMonsters() {
         return defeatedMonsters;
     }
+
+    public boolean isEmpty(){
+        return monsters.isEmpty();
+    }
 }

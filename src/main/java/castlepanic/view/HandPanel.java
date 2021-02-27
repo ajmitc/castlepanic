@@ -11,11 +11,11 @@ public class HandPanel extends JPanel {
     private Model model;
     private View view;
 
-    public HandPanel(Model model, View view){
+    public HandPanel(Model model, View view, int height){
         super();
         this.model = model;
         this.view = view;
-        setPreferredSize(new Dimension(Card.CARD_WIDTH * 3, view.getGamePanel().getBoardPanel().getPreferredSize().height));
+        setPreferredSize(new Dimension(Card.CARD_WIDTH * 3, height));
     }
 
     public void paintComponent(Graphics graphics){

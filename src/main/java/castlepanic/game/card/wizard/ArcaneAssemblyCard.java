@@ -8,5 +8,6 @@ public class ArcaneAssemblyCard extends Card {
 
     public ArcaneAssemblyCard(){
         super(CardType.WIZARD, "Arcane Assembly", CardAbility.ARCANE_ASSEMBLY, "Arcane Assembly.png");
+        order = 5; // must be before Brick and Mortar
     }
 }

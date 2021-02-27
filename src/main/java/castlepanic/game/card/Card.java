@@ -11,6 +11,8 @@ public abstract class Card {
     protected BufferedImage cardImage;
     protected CardAbility ability;
     protected CardAbility abilityOverride; // Used for Change Color and Change Range effects
+    protected boolean hitCard;
+    protected int order;
 
     // Current location of card on screen
     protected int px, py;
@@ -22,7 +24,9 @@ public abstract class Card {
         this.ability = ability;
         this.cardImage = ImageUtil.get(imageName, CARD_WIDTH);
         this.abilityOverride = null;
-        selected = false;
+        this.hitCard = false;
+        this.selected = false;
+        this.order = 10;
     }
 
     public CardType getType() {
@@ -62,5 +66,13 @@ public abstract class Card {
 
     public void setSelected(boolean selected) {
         this.selected = selected;
+    }
+
+    public boolean isHitCard() {
+        return hitCard;
+    }
+
+    public int getOrder() {
+        return order;
     }
 }
