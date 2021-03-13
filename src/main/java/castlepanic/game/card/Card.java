@@ -56,6 +56,14 @@ public abstract class Card {
         this.py = py;
     }
 
+    public int getPx() {
+        return px;
+    }
+
+    public int getPy() {
+        return py;
+    }
+
     public boolean contains(int px, int py) {
         return px >= this.px && py >= this.py && px < this.px + cardImage.getWidth() && py < this.py + cardImage.getHeight();
     }
@@ -74,5 +82,9 @@ public abstract class Card {
 
     public int getOrder() {
         return order;
+    }
+
+    public String toString(){
+        return name + " [" + type + "]";
     }
 }

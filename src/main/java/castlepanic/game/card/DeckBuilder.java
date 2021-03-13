@@ -71,6 +71,7 @@ public class DeckBuilder {
         deck.add(new WallOfForceCard());
         deck.add(new WarStormCard());
         deck.add(new WizardQuakeCard());
+        deck.shuffle();
         return deck;
     }
 

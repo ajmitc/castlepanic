@@ -16,8 +16,10 @@ public class ViewUtil {
     }
 
     public static Color popupSelectColor(String title, String message){
-        Color ret = (Color) JOptionPane.showInputDialog(null, message, title, JOptionPane.PLAIN_MESSAGE, null, new Color[]{Color.BLUE, Color.GREEN, Color.RED}, Color.BLUE);
-        return ret;
+        String selected = (String) JOptionPane.showInputDialog(null, message, title, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Blue", "Green", "Red"}, "Blue");
+        return selected.equalsIgnoreCase("Blue")? Color.BLUE:
+                selected.equalsIgnoreCase("Green")? Color.GREEN:
+                Color.RED;
     }
 
     public static Ring popupSelectRing(String title, String message){

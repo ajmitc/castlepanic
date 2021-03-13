@@ -30,23 +30,20 @@ public class HandPanel extends JPanel {
                 maxColumns += 1;
             for (int i = 0; i < model.getGame().getHand().size(); ++i){
                 Card card = model.getGame().getHand().get(i);
-                card.setLocation(x, y);
                 BufferedImage bi = card.getCardImage();
-                graphics.drawImage(bi, x, y, null);
                 x = (i % maxColumns) * bi.getWidth();
                 y = (i / maxColumns) * bi.getHeight();
+                card.setLocation(x, y);
+                graphics.drawImage(bi, x, y, null);
             }
 
             for (int i = 0; i < model.getGame().getHand().size(); ++i){
                 Card card = model.getGame().getHand().get(i);
-                card.setLocation(x, y);
-                BufferedImage bi = card.getCardImage();
                 if (card.isSelected()){
+                    BufferedImage bi = card.getCardImage();
                     graphics.setColor(Color.GREEN);
-                    graphics.drawRect(x, y, bi.getWidth(), bi.getHeight());
+                    graphics.drawRect(card.getPx(), card.getPy(), bi.getWidth(), bi.getHeight());
                 }
-                x = (i % maxColumns) * bi.getWidth();
-                y = (i / maxColumns) * bi.getHeight();
             }
         }
     }

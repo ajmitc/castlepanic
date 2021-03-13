@@ -87,6 +87,8 @@ public class BoardPanel extends JPanel {
     private View view;
     private BufferedImage boardImage;
     private BufferedImage fortificationImage;
+    private BufferedImage tarTokenImage = ImageUtil.get("Tar Token.png", 50);
+    private BufferedImage fireTokenImage = ImageUtil.get("Fire.png", 40);
 
     // Show details of this monster
     private Monster monsterDetails = null;
@@ -170,6 +172,20 @@ public class BoardPanel extends JPanel {
                     BufferedImage image = ImageUtil.rotateImageByDegrees(monster.getImage(), rotation);
                     monster.getBounds().setBounds(x, y, image.getWidth(), image.getHeight());
                     g.drawImage(image, x, y, null);
+
+                    // Draw tar
+                    if (monster.isTar()){
+                        int tarX = x + ((image.getWidth() - tarTokenImage.getWidth()) / 2);
+                        int tarY = y + ((image.getHeight() - tarTokenImage.getHeight()) / 2);
+                        g.drawImage(tarTokenImage, tarX, tarY, null);
+                    }
+
+                    // Draw Fire Tokens
+                    if (monster.getFireTokens() > 0){
+                        int fireX = x + ((image.getWidth() - fireTokenImage.getWidth()) / 2);
+                        int fireY = y + ((image.getHeight() - fireTokenImage.getHeight()) / 2);
+                        g.drawImage(fireTokenImage, fireX, fireY, null);
+                    }
                 }
             }
         }

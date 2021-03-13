@@ -171,8 +171,12 @@ public class Controller {
                     selectedCard.setSelected(!selectedCard.isSelected());
                     if (model.getGame().getSelectedCardsInHand().isEmpty())
                         view.getGamePanel().getDoneButtonPanel().getBtnDone().setText("Done");
-                    else
-                        view.getGamePanel().getDoneButtonPanel().getBtnDone().setText("Play");
+                    else {
+                        if (model.getGame().getPhaseStep() == PhaseStep.PLAY_DISCARD_AND_DRAW_1 || model.getGame().getPhaseStep() == PhaseStep.PLAY_DISCARD_AND_DRAW_2)
+                            view.getGamePanel().getDoneButtonPanel().getBtnDone().setText("Discard");
+                        else
+                            view.getGamePanel().getDoneButtonPanel().getBtnDone().setText("Play");
+                    }
                     view.refresh();
                 }
             }
@@ -220,12 +224,16 @@ public class Controller {
                             while (model.getGame().getHand().size() < Game.HAND_SIZE){
                                 model.getGame().getHand().add(model.getGame().getCastlePanicDeck().draw());
                             }
+                            //logger.info("Hand:");
+                            //for (Card card: model.getGame().getHand())
+                                //logger.info("" + card);
                             model.getGame().setPhaseStep(PhaseStep.PLAY_ASK_DISCARD_AND_DRAW_1);
                             break;
                         }
                         case PLAY_ASK_DISCARD_AND_DRAW_1:{
                             // Ask player if they want to discard and draw
                             if (ViewUtil.popupConfirm("Discard and Draw", "Do you want to discard and draw?")){
+                                view.getGamePanel().getDoneButtonPanel().getBtnDone().setText("Choose");
                                 model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW_1);
                                 return;
                             }
@@ -251,6 +259,7 @@ public class Controller {
                                     model.getGame().getHand().add(model.getGame().getWizardDeck().draw());
                                 else
                                     model.getGame().getHand().add(model.getGame().getCastlePanicDeck().draw());
+                                view.getGamePanel().getDoneButtonPanel().getBtnDone().setText("Done");
                                 model.getGame().setPhaseStep(PhaseStep.PLAY_ASK_DISCARD_AND_DRAW_2);
                                 break;
                             }
@@ -260,11 +269,14 @@ public class Controller {
                         case PLAY_ASK_DISCARD_AND_DRAW_2:{
                             // Ask player if they want to discard and draw
                             if (ViewUtil.popupConfirm("Discard and Draw", "Do you want to discard and draw again?")){
+                                view.getGamePanel().getDoneButtonPanel().getBtnDone().setText("Choose");
                                 model.getGame().setPhaseStep(PhaseStep.PLAY_DISCARD_AND_DRAW_2);
                                 return;
                             }
-                            else
+                            else {
+                                view.getGamePanel().getDoneButtonPanel().getBtnDone().setText("Done");
                                 model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_CHOOSE_CARDS);
+                            }
                             break;
                         }
                         case PLAY_DISCARD_AND_DRAW_2:{
@@ -286,11 +298,17 @@ public class Controller {
                                 else
                                     model.getGame().getHand().add(model.getGame().getCastlePanicDeck().draw());
                             }
+                            model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_START_CHOOSE_CARDS);
+                            break;
+                        }
+                        case PLAY_CARDS_START_CHOOSE_CARDS:{
+                            // Ask player to choose a card to play
+                            ViewUtil.popupNotify("Play cards from your hand");
                             model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_CHOOSE_CARDS);
                             break;
                         }
                         case PLAY_CARDS_CHOOSE_CARDS:{
-                            // Ask player to choose a card to play
+                            selectedMonster = null;
                             view.getGamePanel().getDoneButtonPanel().getBtnDone().setText("Done");
                             model.getGame().setPhaseStep(PhaseStep.PLAY_SELECTED_CARDS);
                             return;
@@ -309,22 +327,25 @@ public class Controller {
                                 Iterator<Card> cardIterator = selectedCards.iterator();
                                 while (cardIterator.hasNext()){
                                     Card card = cardIterator.next();
-                                    if (applyCardAbility(card)){
-                                        if (card.isHitCard() && doubleStrikeActivated){
-                                            doubleStrikeActivated = false;
-                                            break;
+                                    while (true) {
+                                        if (applyCardAbility(card)) {
+                                            if (card.isHitCard() && doubleStrikeActivated) {
+                                                doubleStrikeActivated = false;
+                                                selectedMonster = null;
+                                                // Apply the cards ability again
+                                            } else {
+                                                model.getGame().getHand().remove(card);
+                                                if (card.getType() == CardType.WIZARD)
+                                                    model.getGame().getWizardDeck().discard(card);
+                                                else
+                                                    model.getGame().getCastlePanicDeck().discard(card);
+                                                cardIterator.remove();
+                                                break;
+                                            }
                                         }
-                                        else {
-                                            model.getGame().getHand().remove(card);
-                                            if (card.getType() == CardType.WIZARD)
-                                                model.getGame().getWizardDeck().discard(card);
-                                            else
-                                                model.getGame().getCastlePanicDeck().discard(card);
-                                            cardIterator.remove();
-                                        }
+                                        else
+                                            return;
                                     }
-                                    else
-                                        return;
                                 }
 
                                 model.getGame().setPhaseStep(PhaseStep.PLAY_CARDS_CHOOSE_CARDS);
@@ -485,7 +506,7 @@ public class Controller {
             }
             case BARBARIAN: {
                 if (selectedMonster == null) {
-                    monsterTargetCriteria.reset();
+                    monsterTargetCriteria.reset().targetAllRingsExceptForest();
                     return false;
                 }
                 else {
@@ -552,7 +573,7 @@ public class Controller {
             }
             case HERO_BLUE: {
                 if (selectedMonster == null) {
-                    monsterTargetCriteria.reset().target(Color.BLUE);
+                    monsterTargetCriteria.reset().target(Color.BLUE).targetMiddleRings();
                     return false;
                 }
                 else if (selectedMonster.getArc().getColor() == Color.BLUE){
@@ -562,7 +583,7 @@ public class Controller {
             }
             case HERO_GREEN: {
                 if (selectedMonster == null) {
-                    monsterTargetCriteria.reset().target(Color.GREEN);
+                    monsterTargetCriteria.reset().target(Color.GREEN).targetMiddleRings();
                     return false;
                 }
                 else if (selectedMonster.getArc().getColor() == Color.GREEN){
@@ -572,7 +593,7 @@ public class Controller {
             }
             case HERO_RED: {
                 if (selectedMonster == null) {
-                    monsterTargetCriteria.reset().target(Color.RED);
+                    monsterTargetCriteria.reset().target(Color.RED).targetMiddleRings();
                     return false;
                 }
                 else if (selectedMonster.getArc().getColor() == Color.RED){
@@ -1150,7 +1171,7 @@ public class Controller {
             if (berserkActivated){
                 model.getGame().getHand().add(model.getGame().getCastlePanicDeck().draw());
             }
-            selectedMonster = null;
+            //selectedMonster = null;
         }
         return true;
     }
@@ -1458,12 +1479,39 @@ public class Controller {
                     break;
                 }
                 case PLAGUE_ARCHERS:{
+                    Iterator<Card> iter = model.getGame().getHand().iterator();
+                    while (iter.hasNext()){
+                        Card card = iter.next();
+                        if (card.getAbility() == CardAbility.ARCHER_ANY_COLOR ||
+                                card.getAbility() == CardAbility.ARCHER_BLUE ||
+                                card.getAbility() == CardAbility.ARCHER_GREEN ||
+                                card.getAbility() == CardAbility.ARCHER_RED)
+                            iter.remove();
+                    }
                     break;
                 }
                 case PLAGUE_KNIGHTS:{
+                    Iterator<Card> iter = model.getGame().getHand().iterator();
+                    while (iter.hasNext()){
+                        Card card = iter.next();
+                        if (card.getAbility() == CardAbility.KNIGHT_ANY_COLOR ||
+                                card.getAbility() == CardAbility.KNIGHT_BLUE ||
+                                card.getAbility() == CardAbility.KNIGHT_GREEN ||
+                                card.getAbility() == CardAbility.KNIGHT_RED)
+                            iter.remove();
+                    }
                     break;
                 }
                 case PLAGUE_SWORDSMEN:{
+                    Iterator<Card> iter = model.getGame().getHand().iterator();
+                    while (iter.hasNext()){
+                        Card card = iter.next();
+                        if (card.getAbility() == CardAbility.SWORDSMAN_ANY_COLOR ||
+                                card.getAbility() == CardAbility.SWORDSMAN_BLUE ||
+                                card.getAbility() == CardAbility.SWORDSMAN_GREEN ||
+                                card.getAbility() == CardAbility.SWORDSMAN_RED)
+                            iter.remove();
+                    }
                     break;
                 }
                 case ALL_PLAYERS_DISCARD_ONE_CARD:{
@@ -1749,7 +1797,9 @@ public class Controller {
                 return false;
             if (this.arc != null && this.arc != monster.getArc())
                 return false;
-            if (this.validRings != null && (!this.validRings.contains(monster.getRing()) || (this.validRings.contains(Ring.ARCHER) && monster.getRing() != Ring.ARCHER && !monster.hasAbility(MonsterAbility.FLYING))))
+            if (this.validRings != null && monster.hasAbility(MonsterAbility.FLYING) && !this.validRings.contains(Ring.ARCHER))
+                return false;
+            if (this.validRings != null && !(this.validRings.contains(monster.getRing()) || (this.validRings.contains(Ring.ARCHER) && monster.getRing() != Ring.ARCHER && monster.hasAbility(MonsterAbility.FLYING))))
                 return false;
             return true;
         }
@@ -1761,7 +1811,10 @@ public class Controller {
             if (this.arc != null && this.arc != monster.getArc()) {
                 logger.info("required arc is " + this.arc + ", but monster arc is " + monster.getArc());
             }
-            if (this.validRings != null && (!this.validRings.contains(monster.getRing()) || (this.validRings.contains(Ring.ARCHER) && monster.getRing() != Ring.ARCHER && !monster.hasAbility(MonsterAbility.FLYING)))){
+            if (this.validRings != null && monster.hasAbility(MonsterAbility.FLYING) && !this.validRings.contains(Ring.ARCHER)) {
+                logger.info("flying monsters must be hit by ARCHER card");
+            }
+            if (this.validRings != null && !(this.validRings.contains(monster.getRing()) || (this.validRings.contains(Ring.ARCHER) && monster.getRing() != Ring.ARCHER && monster.hasAbility(MonsterAbility.FLYING)))){
                 logger.info("required ring is " + this.validRings + ", but monster ring is " + monster.getRing());
             }
         }
